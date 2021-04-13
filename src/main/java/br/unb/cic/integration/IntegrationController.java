@@ -1,5 +1,6 @@
 package br.unb.cic.integration;
 
+import br.unb.cic.goda.model.FormulaTreeModel;
 import br.unb.cic.goda.model.FormulaTreeNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -72,5 +73,15 @@ public class IntegrationController {
             @RequestBody FormulaTreeNode newSubTree) {
 
         return this.service.editFormulaTree(id, goal, newSubTree, false);
+    }
+
+    @RequestMapping(value = "/formula/reliability", method = RequestMethod.POST)
+    public @ResponseBody FormulaTreeModel createReliabilityFormulaTree(@RequestBody FormulaTreeModel model) {
+	    return this.service.createFormulaTree(model, true);
+    }
+
+    @RequestMapping(value = "/formula/cost", method = RequestMethod.POST)
+    public @ResponseBody FormulaTreeModel createCostFormulaTree(@RequestBody FormulaTreeModel model) {
+        return this.service.createFormulaTree(model, false);
     }
 }

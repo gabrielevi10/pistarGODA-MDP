@@ -1,16 +1,20 @@
 package br.unb.cic.integration;
 
+import br.unb.cic.goda.model.FormulaTreeModel;
 import br.unb.cic.goda.model.FormulaTreeNode;
 import br.unb.cic.goda.rtgoretoprism.generator.goda.writer.ManageWriter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
+
 
 @Service
 public class FormulaService {
@@ -129,9 +133,26 @@ public class FormulaService {
     private String parseObjectToJsonString(Object object) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
             return objectMapper.writeValueAsString(object);
         } catch (Exception e) {
             return "";
         }
+    }
+
+    public FormulaTreeModel createFormulaTree(String id, FormulaTreeNode tree, boolean isReliability) {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        long timeId = timestamp.getTime();
+        id = id + "_" + timeId;
+        FormulaTreeModel model = new FormulaTreeModel();
+        try {
+            String json = parseObjectToJsonString(tree);
+            this.writeFormulaTreeJson(id, json, isReliability);
+
+            model.setId(id);
+            model.setTree(tree);
+        } catch (IOException e) { }
+
+        return model;
     }
 }

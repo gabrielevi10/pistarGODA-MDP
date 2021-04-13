@@ -345,4 +345,8 @@ public class IntegrationService {
 		return formulaService.editFormulaTree(id, goal, subTree, isReliability);
 	}
 
+	public FormulaTreeModel createFormulaTree(FormulaTreeModel model, boolean isReliability) {
+		return formulaService.createFormulaTree(model.getId(), model.getTree(), isReliability);
+	}
+
 }

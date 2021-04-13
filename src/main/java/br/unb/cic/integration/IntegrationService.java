@@ -1,42 +1,40 @@
 package br.unb.cic.integration;
 
-import static br.unb.cic.goda.rtgoretoprism.util.SintaticAnaliser.verifySintaxModel;
+import br.unb.cic.goda.model.*;
+import br.unb.cic.goda.rtgoretoprism.action.PRISMCodeGenerationAction;
+import br.unb.cic.goda.rtgoretoprism.action.RunParamAction;
+import br.unb.cic.goda.rtgoretoprism.generator.goda.writer.ManageWriter;
+import br.unb.cic.pistar.model.PistarActor;
+import br.unb.cic.pistar.model.PistarLink;
+import br.unb.cic.pistar.model.PistarModel;
+import br.unb.cic.pistar.model.PistarNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.Normalizer;
+import java.io.PrintWriter;
+import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.management.RuntimeErrorException;
-
-import br.unb.cic.goda.model.*;
-import br.unb.cic.goda.rtgoretoprism.generator.CodeGenerationException;
-import br.unb.cic.goda.rtgoretoprism.generator.goda.producer.PARAMProducer;
-import br.unb.cic.goda.rtgoretoprism.generator.goda.writer.ManageWriter;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonParser;
-import org.springframework.stereotype.Service;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import br.unb.cic.goda.rtgoretoprism.action.PRISMCodeGenerationAction;
-import br.unb.cic.goda.rtgoretoprism.action.RunParamAction;
-import br.unb.cic.pistar.model.PistarActor;
-import br.unb.cic.pistar.model.PistarLink;
-import br.unb.cic.pistar.model.PistarModel;
-import br.unb.cic.pistar.model.PistarNode;
+import static br.unb.cic.goda.rtgoretoprism.util.SintaticAnaliser.verifySintaxModel;
 
 @Service
 public class IntegrationService {
+
+	private FormulaService formulaService;
+
+	@Autowired
+	public IntegrationService(FormulaService formulaService) {
+		this.formulaService = formulaService;
+	}
+
 	public void executePrism(String content, String typeModel, String output) {
 		Gson gson = new GsonBuilder().create();
 		PistarModel model = gson.fromJson(content, PistarModel.class);
@@ -336,56 +334,15 @@ public class IntegrationService {
 	}
 
 	public String getReliabilityFormulaTree(String id, String goal) {
-		return loadFormulaTreeFromJson(id, goal, true);
+		return formulaService.getReliabilityFormulaTree(id, goal);
 	}
 
 	public String getCostFormulaTree(String id, String goal) {
-		return loadFormulaTreeFromJson(id, goal, false);
+		return formulaService.getCostFormulaTree(id, goal);
 	}
 
-	public String loadFormulaTreeFromJson(String id, String goal, boolean isReliability) {
-		String content;
-		try {
-			if (isReliability) {
-				content = ManageWriter.readFileAsString("resources/reliability/" + id + "_reliability.json");
-			} else {
-				content = ManageWriter.readFileAsString("resources/cost/" + id + "_cost.json");
-			}
-
-			ObjectMapper objectMapper = new ObjectMapper();
-			FormulaTreeNode formulaTree = objectMapper.readValue(content, FormulaTreeNode.class);
-			formulaTree = getFormulaSubTree(formulaTree, goal);
-
-			String json = objectMapper.writeValueAsString(formulaTree);
-			return json;
-		} catch(Exception e) {
-			return "";
-		}
-	}
-
-	private FormulaTreeNode getFormulaSubTree(FormulaTreeNode formulaTreeNode, String goal) {
-		Queue<FormulaTreeNode> formulaTreeNodeQueue = new LinkedList<>();
-		Set<String> visited = new HashSet<>();
-		FormulaTreeNode node = null;
-
-		formulaTreeNodeQueue.add(formulaTreeNode);
-		visited.add(formulaTreeNode.id);
-
-		while (!formulaTreeNodeQueue.isEmpty()) {
-			node = formulaTreeNodeQueue.remove();
-			if (node.id.equals(goal)) {
-				break;
-			} else {
-				node.subNodes.forEach(subNode -> {
-					if (!visited.contains(subNode.id)) {
-						visited.add(subNode.id);
-						formulaTreeNodeQueue.add((subNode));
-					}
-				});
-			}
-		}
-
-		return node;
+	public String editFormulaTree(String id, String goal, FormulaTreeNode subTree, boolean isReliability) {
+		return formulaService.editFormulaTree(id, goal, subTree, isReliability);
 	}
 
 }

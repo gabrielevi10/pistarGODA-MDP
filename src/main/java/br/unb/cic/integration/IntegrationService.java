@@ -349,4 +349,7 @@ public class IntegrationService {
 		return formulaService.createFormulaTree(model.getId(), model.getTree(), isReliability);
 	}
 
+	public FormulaTreeNode deleteFormulaTree(String id, String goal, boolean isReliability) {
+		return formulaService.deleteFormulaTree(id, goal, isReliability);
+	}
 }

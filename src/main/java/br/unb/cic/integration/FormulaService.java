@@ -33,7 +33,7 @@ public class FormulaService {
     private FormulaTreeNode loadFormulaTreeFromJson(String id, String goal, boolean isReliability) {
         try {
             FormulaTreeNode formulaTree = loadFormulaTreeFromJson(id, isReliability);
-            return getFormulaSubTree(formulaTree, goal);
+            return getFormulaSubTree(formulaTree, goal, false);
         } catch(Exception e) {
             return new FormulaTreeNode();
         }
@@ -58,7 +58,7 @@ public class FormulaService {
         }
     }
 
-    private FormulaTreeNode getFormulaSubTree(FormulaTreeNode formulaTreeNode, String goal) {
+    private FormulaTreeNode getFormulaSubTree(FormulaTreeNode formulaTreeNode, String goal, boolean parent) {
         Queue<FormulaTreeNode> formulaTreeNodeQueue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
         FormulaTreeNode node = null;
@@ -71,12 +71,16 @@ public class FormulaService {
             if (node.id.equals(goal)) {
                 break;
             } else {
-                node.subNodes.forEach(subNode -> {
+                for (FormulaTreeNode subNode : node.subNodes) {
+                    if (parent && subNode.id.equals(goal)) {
+                        return node;
+                    }
+
                     if (!visited.contains(subNode.id)) {
                         visited.add(subNode.id);
                         formulaTreeNodeQueue.add((subNode));
                     }
-                });
+                }
             }
         }
 
@@ -99,7 +103,7 @@ public class FormulaService {
     }
 
     private void updateFormulaTree(String id, String goal, FormulaTreeNode formulaTree, FormulaTreeNode subTree) {
-        FormulaTreeNode formulaTreeToEdit = getFormulaSubTree(formulaTree, goal);
+        FormulaTreeNode formulaTreeToEdit = getFormulaSubTree(formulaTree, goal, false);
 
         String oldFormula = formulaTreeToEdit.formula;
 
@@ -113,9 +117,7 @@ public class FormulaService {
     private void updateFormulaOnTree(FormulaTreeNode formulaTree, String oldFormula, String newFormula) {
         formulaTree.formula = formulaTree.formula.replace(oldFormula, newFormula);
 
-        formulaTree.subNodes.forEach(node -> {
-            updateFormulaOnTree(node, oldFormula, newFormula);
-        });
+        formulaTree.subNodes.forEach(node -> updateFormulaOnTree(node, oldFormula, newFormula));
     }
 
     private void writeFormulaTreeJson(String id, String json, boolean isReliability) throws IOException {
@@ -151,8 +153,37 @@ public class FormulaService {
 
             model.setId(id);
             model.setTree(tree);
-        } catch (IOException e) { }
+        } catch (IOException ignored) { }
 
         return model;
+    }
+
+    public FormulaTreeNode deleteFormulaTree(String id, String goal, boolean isReliability) {
+        FormulaTreeNode formulaTree = loadFormulaTreeFromJson(id, isReliability);
+        FormulaTreeNode parentNode = getFormulaSubTree(formulaTree, goal, true);
+        String formulaToDelete = "";
+
+        try {
+            if (formulaTree.id.equals(goal)) {
+
+                writeFormulaTreeJson(id, "", isReliability);
+                return new FormulaTreeNode();
+            } else {
+                for (FormulaTreeNode node : parentNode.subNodes) {
+                    if (node.id.equals(goal)) {
+                        formulaToDelete = node.formula;
+                        parentNode.subNodes.remove(node);
+                        break;
+                    }
+                }
+            }
+
+            updateFormulaOnTree(formulaTree, formulaToDelete, "");
+            writeFormulaTreeJson(id, parseObjectToJsonString(formulaTree), isReliability);
+        } catch (IOException e) {
+            return new FormulaTreeNode();
+        }
+
+        return formulaTree;
     }
 }

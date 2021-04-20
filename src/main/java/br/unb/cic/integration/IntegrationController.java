@@ -84,4 +84,20 @@ public class IntegrationController {
     public @ResponseBody FormulaTreeModel createCostFormulaTree(@RequestBody FormulaTreeModel model) {
         return this.service.createFormulaTree(model, false);
     }
+
+    @RequestMapping(value = "/formula/reliability", method = RequestMethod.DELETE)
+    public @ResponseBody FormulaTreeNode deleteReliabilityFormulaTree(
+        @RequestParam(value = "id") String id,
+        @RequestParam(value = "goal") String goal) {
+
+	    return this.service.deleteFormulaTree(id, goal, true);
+    }
+
+    @RequestMapping(value = "/formula/cost", method = RequestMethod.DELETE)
+    public @ResponseBody FormulaTreeNode deleteCostFormulaTree(
+            @RequestParam(value = "id") String id,
+            @RequestParam(value = "goal") String goal) {
+
+        return this.service.deleteFormulaTree(id, goal, false);
+    }
 }

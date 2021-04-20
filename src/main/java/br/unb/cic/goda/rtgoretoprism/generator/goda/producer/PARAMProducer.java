@@ -112,6 +112,7 @@ public class PARAMProducer {
 		}
 
 		node.formula = rootNode.getFormula();
+		node.annotation = rootNode.getRtRegex();
 
 		for (GoalContainer subNode : decompGoal) {
 			FormulaTreeNode sn = generateFormulaTree(subNode);

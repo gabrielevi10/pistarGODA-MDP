@@ -89,16 +89,18 @@ public class FormulaService {
         return node;
     }
 
-    public String editFormulaTree(String id, String goal, FormulaTreeNode subTree, boolean isReliability) {
+    public String editFormulaTree(String id, String goal, FormulaTreeNode subTree, boolean isReliability, boolean shouldPersist) {
         FormulaTreeNode formulaTree = loadFormulaTreeFromJson(id, isReliability);
         updateFormulaTree(id, goal, formulaTree, subTree, isReliability);
 
         String json = parseObjectToJsonString(formulaTree);
 
-        try {
-            writeFormulaTreeJson(id, json, isReliability);
-        } catch (IOException e) {
-            return "";
+        if (shouldPersist) {
+            try {
+                writeFormulaTreeJson(id, json, isReliability);
+            } catch (IOException e) {
+                return "";
+            }
         }
 
         return json;

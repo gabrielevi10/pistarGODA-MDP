@@ -61,18 +61,20 @@ public class IntegrationController {
     public @ResponseBody String editReliabilityFormulaTree(
             @RequestParam(value = "id") String id,
             @RequestParam(value = "goal") String goal,
+            @RequestParam(value = "shouldPersist") boolean shouldPersist,
             @RequestBody FormulaTreeNode newSubTree) {
 
-	    return this.service.editFormulaTree(id, goal, newSubTree, true);
+	    return this.service.editFormulaTree(id, goal, newSubTree, true, shouldPersist);
     }
 
     @RequestMapping(value = "/formula/cost", method = RequestMethod.PUT)
     public @ResponseBody String editCostFormulaTree(
             @RequestParam(value = "id") String id,
             @RequestParam(value = "goal") String goal,
+            @RequestParam(value = "shouldPersist") boolean shouldPersist,
             @RequestBody FormulaTreeNode newSubTree) {
 
-        return this.service.editFormulaTree(id, goal, newSubTree, false);
+        return this.service.editFormulaTree(id, goal, newSubTree, false, shouldPersist);
     }
 
     @RequestMapping(value = "/formula/reliability", method = RequestMethod.POST)

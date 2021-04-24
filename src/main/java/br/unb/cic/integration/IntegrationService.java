@@ -341,8 +341,8 @@ public class IntegrationService {
 		return formulaService.getCostFormulaTree(id, goal);
 	}
 
-	public String editFormulaTree(String id, String goal, FormulaTreeNode subTree, boolean isReliability) {
-		return formulaService.editFormulaTree(id, goal, subTree, isReliability);
+	public String editFormulaTree(String id, String goal, FormulaTreeNode subTree, boolean isReliability, boolean shouldPersist) {
+		return formulaService.editFormulaTree(id, goal, subTree, isReliability, shouldPersist);
 	}
 
 	public FormulaTreeModel createFormulaTree(FormulaTreeModel model, boolean isReliability) {

@@ -2,18 +2,20 @@ package br.unb.cic.integration;
 
 import br.unb.cic.goda.model.FormulaTreeModel;
 import br.unb.cic.goda.model.FormulaTreeNode;
+import br.unb.cic.goda.rtgoretoprism.generator.goda.producer.PARAMProducer;
 import br.unb.cic.goda.rtgoretoprism.generator.goda.writer.ManageWriter;
+import br.unb.cic.goda.rtgoretoprism.model.kl.Const;
+import br.unb.cic.goda.rtgoretoprism.model.kl.RTContainer;
+import br.unb.cic.goda.rtgoretoprism.paramformula.SymbolicParamGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Timestamp;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
 
 @Service
@@ -89,7 +91,7 @@ public class FormulaService {
 
     public String editFormulaTree(String id, String goal, FormulaTreeNode subTree, boolean isReliability) {
         FormulaTreeNode formulaTree = loadFormulaTreeFromJson(id, isReliability);
-        updateFormulaTree(id, goal, formulaTree, subTree);
+        updateFormulaTree(id, goal, formulaTree, subTree, isReliability);
 
         String json = parseObjectToJsonString(formulaTree);
 
@@ -102,16 +104,49 @@ public class FormulaService {
         return json;
     }
 
-    private void updateFormulaTree(String id, String goal, FormulaTreeNode formulaTree, FormulaTreeNode subTree) {
+    private void updateFormulaTree(String id, String goal, FormulaTreeNode formulaTree, FormulaTreeNode subTree, boolean isReliability) {
         FormulaTreeNode formulaTreeToEdit = getFormulaSubTree(formulaTree, goal, false);
 
         String oldFormula = formulaTreeToEdit.formula;
+        Map<String, String> ctxInformation = new HashMap<>();
+
+        List<String> subNodesIds = new ArrayList<>();
+        for (FormulaTreeNode node : subTree.subNodes) {
+            subNodesIds.add(node.id);
+            if (node.hasContext) {
+                ctxInformation.put(node.id, "");
+            }
+        }
+
+        String[] subNodesIdsArr = subNodesIds.toArray(new String[0]);
+        PARAMProducer paramProducer = new PARAMProducer(ctxInformation);
+
+        try {
+            formulaTreeToEdit.formula = paramProducer.getNodeForm(subTree.decomposition,
+                    subTree.annotation, subTree.id, isReliability, subNodesIdsArr);
+
+            for (FormulaTreeNode node : subTree.subNodes) {
+                if (isReliability) {
+                    if (!formulaTreeToEdit.formula.contains("R_" + node.id)) {
+                        formulaTreeToEdit.formula = formulaTreeToEdit.formula.replace(node.id, "R_" + node.id);
+                    }
+                } else {
+                    if (!formulaTreeToEdit.formula.contains("W_" + node.id)) {
+                        formulaTreeToEdit.formula = formulaTreeToEdit.formula.replace(node.id, "W_" + node.id);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return;
+        }
 
         formulaTreeToEdit.id = subTree.id;
-        formulaTreeToEdit.formula = subTree.formula;
         formulaTreeToEdit.subNodes = subTree.subNodes;
+        formulaTreeToEdit.hasContext = subTree.hasContext;
+        formulaTreeToEdit.annotation = subTree.annotation;
+        formulaTreeToEdit.decomposition = subTree.decomposition;
 
-        updateFormulaOnTree(formulaTree, oldFormula, subTree.formula);
+        updateFormulaOnTree(formulaTree, oldFormula, formulaTreeToEdit.formula);
     }
 
     private void updateFormulaOnTree(FormulaTreeNode formulaTree, String oldFormula, String newFormula) {

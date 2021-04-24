@@ -82,6 +82,10 @@ public class PARAMProducer {
 		this.typeModel = typeModel;
 	}
 
+	public PARAMProducer(Map<String, String> ctxInformation) {
+		this.ctxInformation = ctxInformation;
+	}
+
 	public void run() throws Exception {
 
 		for (Actor actor : allActors) {
@@ -113,15 +117,18 @@ public class PARAMProducer {
 
 		node.formula = rootNode.getFormula();
 		node.annotation = rootNode.getRtRegex() != null ? rootNode.getRtRegex() : "";
+		node.decomposition = rootNode.getDecomposition();
 
 		for (GoalContainer subNode : decompGoal) {
 			FormulaTreeNode sn = generateFormulaTree(subNode);
+			sn.hasContext = node.formula.contains("CTX_" + sn.id + " *");
 			node.subNodes.add(sn);
 		}
 
 		/* Run for sub tasks */
 		for (PlanContainer subNode : decompPlans) {
 			FormulaTreeNode sn = generateFormulaTree(subNode);
+			sn.hasContext = node.formula.contains("CTX_" + sn.id + " *");
 			node.subNodes.add(sn);
 		}
 
@@ -281,7 +288,7 @@ public class PARAMProducer {
 	}
 
 	// true: compose reliability, false: compose cost
-	private String composeNodeForm(RTContainer rootNode, boolean reliability) throws Exception {
+	public String composeNodeForm(RTContainer rootNode, boolean reliability) throws Exception {
 
 		Const decType;
 		String rtAnnot;
@@ -304,7 +311,7 @@ public class PARAMProducer {
 			setContextList(decompGoal, decompPlans);
 		}
 
-		nodeForm = getNodeForm(decType, rtAnnot, nodeId, reliability, rootNode);
+		nodeForm = getNodeForm(decType, rtAnnot, nodeId, reliability, getChildrenId(rootNode));
 
 		/* Run for sub goals */
 		for (GoalContainer subNode : decompGoal) {
@@ -363,7 +370,7 @@ public class PARAMProducer {
 		return nodeForm;
 	}
 
-	private String getNodeForm(Const decType, String rtAnnot, String nodeId, boolean reliability, RTContainer rootNode)
+	public String getNodeForm(Const decType, String rtAnnot, String nodeId, boolean reliability, String[] ids)
 			throws Exception {
 
 		if (rtAnnot == null) {
@@ -373,8 +380,11 @@ public class PARAMProducer {
 		StringBuilder formula = new StringBuilder();
 		SymbolicParamGenerator symbolic = new SymbolicParamGenerator();
 
+		if (ctxInformation == null) {
+			ctxInformation = new HashMap<>();
+		}
+
 		if (rtAnnot.contains(";")) { // Sequential
-			String[] ids = getChildrenId(rootNode);
 
 			if (reliability) {
 				// Reliability formula
@@ -394,7 +404,6 @@ public class PARAMProducer {
 
 			return formula.toString();
 		} else if (rtAnnot.contains("#")) { // Parallel
-			String[] ids = getChildrenId(rootNode);
 
 			if (reliability) {
 				// Reliability formula
@@ -414,14 +423,12 @@ public class PARAMProducer {
 
 			return formula.toString();
 		} else if (rtAnnot.contains("DM")) {
-			String[] ids = getChildrenId(rootNode);
 			if (reliability) {
 				formula = symbolic.getDMReliability(ids, this.ctxInformation);
 			} else {
 				formula = symbolic.getDMCost(ids, ctxInformation, this.isParam);
 			}
 		} else if (rtAnnot.contains("@")) {
-			String[] ids = getChildrenId(rootNode);
 			int retryNum = Integer.parseInt(rtAnnot.substring(rtAnnot.indexOf("@") + 1));
 
 			if (reliability) {
@@ -431,7 +438,6 @@ public class PARAMProducer {
 			}
 			return formula.toString();
 		} else if (rtAnnot.contains("try")) {
-			String[] ids = getChildrenId(rootNode);
 			
 			if(rtAnnot.contains("?skip:")) { //try(a)?b:skip
 				ids = new String[] {ids[0], "skip", ids[1]};

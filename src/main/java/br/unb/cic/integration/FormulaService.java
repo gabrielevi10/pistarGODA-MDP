@@ -128,15 +128,7 @@ public class FormulaService {
                     subTree.annotation, subTree.id, isReliability, subNodesIdsArr);
 
             for (FormulaTreeNode node : subTree.subNodes) {
-                if (isReliability) {
-                    if (!formulaTreeToEdit.formula.contains("R_" + node.id)) {
-                        formulaTreeToEdit.formula = formulaTreeToEdit.formula.replace(node.id, "R_" + node.id);
-                    }
-                } else {
-                    if (!formulaTreeToEdit.formula.contains("W_" + node.id)) {
-                        formulaTreeToEdit.formula = formulaTreeToEdit.formula.replace(node.id, "W_" + node.id);
-                    }
-                }
+                formulaTreeToEdit.formula = formulaTreeToEdit.formula.replace(" " + node.id, " " + node.formula);
             }
         } catch (Exception e) {
             return;
